@@ -1,0 +1,44 @@
+from PIL import Image
+import face_recognition
+from IPython.display import display
+import pandas as pd
+# Load the jpg file into a numpy array
+#image = face_recognition.load_image_file("35686948_2010940409222504_8292923842406383616_n.jpg")
+unkown_image = face_recognition.load_image_file("48357921_525266544655016_5182188839342440448_n.jpg")
+annotations = pd.read_csv("Kown_Person/data_annotation.csv")
+# Find all the faces in the image using a pre-trained convolutional neural network.
+# This method is more accurate than the default HOG model, but it's slower
+# unless you have an nvidia GPU and dlib compiled with CUDA extensions. But if you do,
+# this will use GPU acceleration and perform well.
+# See also: find_faces_in_picture.py
+#face_locations = face_recognition.face_locations(image, number_of_times_to_upsample=0, model="cnn")
+unkown_face_locations = face_recognition.face_locations(unkown_image, number_of_times_to_upsample=0, model="cnn")
+lis_dic =[]
+# print("I found {} face(s) in this photograph.".format(len(face_locations)))
+# image_encoding = face_recognition.face_encodings(image,face_locations)[0]
+unkown_images_encoding = face_recognition.face_encodings(unkown_image,unkown_face_locations)
+for un_im,un_face_loc in zip(unkown_images_encoding,unkown_face_locations):
+    for index,row in annotations.iterrows():
+        face_locations = [row["top"],row["right"],row["bottom"],row["left"]]
+        name = row["Name"]
+        path_image = row["path_image"]
+        image = face_recognition.load_image_file("Kown_Person/"+path_image)
+        image_encoding = face_recognition.face_encodings(image,[face_locations])[0]
+        result = face_recognition.compare_faces([image_encoding], un_im,tolerance=0.5)[0]
+#         print(result,name)
+        if result:
+            top, right, bottom, left = un_face_loc
+#             face_image = unkown_image[top:bottom, left:right]
+#             pil_image = Image.fromarray(face_image)
+#             display(pil_image)
+            dic_loc = {"name":name,"top":top,"right":right,"bottom":bottom,"left":left}
+            lis_dic.append(dic_loc)
+    # Print the location of each face in this image
+#     top, right, bottom, left = face_location
+#     print("A face is located at pixel location Top: {}, Left: {}, Bottom: {}, Right: {}".format(top, left, bottom, right))
+
+    # You can access the actual face itself like this:
+#     face_image = image[top:bottom, left:right]
+#     pil_image = Image.fromarray(face_image)
+#     display(pil_image)
+print(lis_dic)
